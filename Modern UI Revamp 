@@ -1,0 +1,30 @@
+Commit 1: Modern UI Revamp  
+Message:  
+feat: Complete UI overhaul with themed styling and responsive layout  
+
+Changes:  
+``python
+Main changes include:
+Added ThemedTk from ttkthemes with 'arc' theme
+Created styled components:
+Custom title and label styles
+Modern button styling with hover effects
+Framed sections with consistent padding
+Responsive grid layout with weights
+root = ThemedTk(theme="arc")
+self.style.configure('Main.TFrame', background='#f0f0f0')
+self.style.configure('Title.TLabel', 
+                    font=('Helvetica', 14, 'bold'),
+                    background='#2c3e50',
+                    foreground='white')
+self.root.grid_rowconfigure(1, weight=1)
+self.root.grid_columnconfigure(0, weight=1)
+`
+
+Explanation:  
+Upgraded from basic Tk() to ThemedTk for modern aesthetics
+  
+Implemented consistent styling for all components using ttk.Style 
+ 
+Added responsive grid configuration  
+Introduced button hover effects through event binding  
