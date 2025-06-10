@@ -1,0 +1,425 @@
+Commit 14
+
+import tkinter as tk
+from tkinter import ttk, scrolledtext
+import requests
+import socket
+from urllib.parse import urlparse
+from tkinter import messagebox
+from ttkthemes import ThemedTk
+import sqlite3
+from datetime import datetime
+
+class WebScraperGUI:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Web Scraper with IP Resolution")
+        self.root.geometry("900x700")
+        
+        # Initialize database
+        self.init_database()
+        
+        # Apply modern theme
+        self.style = ttk.Style()
+        
+        # Configure styles
+        self.style.configure('Main.TFrame', background='#f0f0f0')
+        self.style.configure('Title.TLabel', 
+                           font=('Helvetica', 14, 'bold'),
+                           background='#2c3e50',
+                           foreground='white',
+                           padding=10)
+        self.style.configure('Label.TLabel',
+                           font=('Helvetica', 10),
+                           background='#f0f0f0',
+                           padding=5)
+        
+        # Create header
+        self.header_frame = ttk.Frame(self.root, style='Main.TFrame')
+        self.header_frame.grid(row=0, column=0, sticky='ew')
+        ttk.Label(self.header_frame,
+                 text="Web Scraper & IP Resolution Tool",
+                 style='Title.TLabel').grid(row=0, column=0, columnspan=4, sticky='ew')
+        
+        # Create main frame
+        self.main_frame = ttk.Frame(self.root, style='Main.TFrame', padding="20")
+        self.main_frame.grid(row=1, column=0, sticky='nsew')
+        
+        # URL Input Frame
+        self.url_frame = ttk.Frame(self.main_frame, style='Main.TFrame')
+        self.url_frame.grid(row=0, column=0, columnspan=4, pady=10, sticky='ew')
+        
+        ttk.Label(self.url_frame,
+                 text="Enter URL:",
+                 style='Label.TLabel').grid(row=0, column=0, sticky='w')
+        
+        # Styled Entry
+        self.url_entry = ttk.Entry(self.url_frame,
+                                 width=60,
+                                 font=('Helvetica', 10))
+        self.url_entry.grid(row=0, column=1, padx=5, sticky='w')
+        
+        # Button Frame
+        self.button_frame = ttk.Frame(self.main_frame, style='Main.TFrame')
+        self.button_frame.grid(row=1, column=0, columnspan=4, pady=10)
+        
+        # Enhanced Button Frame with more buttons
+        button_options = {
+            'font': ('Helvetica', 10, 'bold'),
+            'fg': 'white',
+            'activeforeground': 'white',
+            'relief': 'raised',
+            'padx': 15,
+            'pady': 8
+        }
+        
+        self.fetch_button = tk.Button(
+            self.button_frame,
+            text="Fetch Data",
+            command=self.fetch_data,
+            bg='#2ecc71',
+            activebackground='#27ae60',
+            **button_options
+        )
+        self.fetch_button.grid(row=0, column=0, padx=5, pady=5)
+        
+        self.save_button = tk.Button(
+            self.button_frame,
+            text="Save to DB",
+            command=self.save_to_db,
+            bg='#3498db',
+            activebackground='#2980b9',
+            **button_options
+        )
+        self.save_button.grid(row=0, column=1, padx=5, pady=5)
+        
+        self.history_button = tk.Button(
+            self.button_frame,
+            text="View History",
+            command=self.view_history,
+            bg='#9b59b6',
+            activebackground='#8e44ad',
+            **button_options
+        )
+        self.history_button.grid(row=0, column=2, padx=5, pady=5)
+        
+        self.clear_button = tk.Button(
+            self.button_frame,
+            text="Clear",
+            command=self.clear_data,
+            bg='#e74c3c',
+            activebackground='#c0392b',
+            **button_options
+        )
+        self.clear_button.grid(row=0, column=3, padx=5, pady=5)
+        
+        self.clear_db_button = tk.Button(
+            self.button_frame,
+            text="Clear History",
+            command=self.clear_history,
+            bg='#f39c12',
+            activebackground='#d35400',
+            **button_options
+        )
+        self.clear_db_button.grid(row=0, column=4, padx=5, pady=5)
+        
+        # IP Information Frame
+        self.ip_frame = ttk.Frame(self.main_frame, style='Main.TFrame')
+        self.ip_frame.grid(row=2, column=0, columnspan=4, pady=10, sticky='ew')
+        
+        ttk.Label(self.ip_frame,
+                 text="IP Information:",
+                 style='Label.TLabel').grid(row=0, column=0, sticky='w')
+        
+        # Styled IP Text
+        self.ip_text = scrolledtext.ScrolledText(
+            self.ip_frame,
+            width=70,
+            height=5,
+            font=('Consolas', 10),
+            bg='#ffffff',
+            fg='#2c3e50',
+            wrap=tk.WORD
+        )
+        self.ip_text.grid(row=1, column=0, pady=5)
+        
+        # HTML Content Frame
+        self.html_frame = ttk.Frame(self.main_frame, style='Main.TFrame')
+        self.html_frame.grid(row=3, column=0, columnspan=4, pady=10, sticky='ew')
+        
+        ttk.Label(self.html_frame,
+                 text="HTML Content:",
+                 style='Label.TLabel').grid(row=0, column=0, sticky='w')
+        
+        # Styled HTML Text
+        self.html_text = scrolledtext.ScrolledText(
+            self.html_frame,
+            width=70,
+            height=20,
+            font=('Consolas', 10),
+            bg='#ffffff',
+            fg='#2c3e50',
+            wrap=tk.WORD
+        )
+        self.html_text.grid(row=1, column=0, pady=5)
+        
+        # Configure grid weights
+        self.root.grid_rowconfigure(1, weight=1)
+        self.root.grid_columnconfigure(0, weight=1)
+        
+        # Store current data for database operations
+        self.current_data = None
+
+    def init_database(self):
+        """Initialize the SQLite database and create tables if they don't exist."""
+        self.conn = sqlite3.connect('webscraper.db')
+        self.cursor = self.conn.cursor()
+        
+        # Create tables if they don't exist
+        self.cursor.execute('''CREATE TABLE IF NOT EXISTS scraped_data (
+                            id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            url TEXT NOT NULL,
+                            domain TEXT,
+                            ip_address TEXT,
+                            hostname TEXT,
+                            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+                            html_content TEXT
+                            )''')
+        self.conn.commit()
+
+    def save_to_db(self):
+        """Save the current scraped data to the database."""
+        if not self.current_data:
+            messagebox.showwarning("Warning", "No data to save. Please fetch data first.")
+            return
+            
+        try:
+            self.cursor.execute('''INSERT INTO scraped_data 
+                                (url, domain, ip_address, hostname, html_content)
+                                VALUES (?, ?, ?, ?, ?)''',
+                                (self.current_data['url'],
+                                 self.current_data['domain'],
+                                 self.current_data['ip_address'],
+                                 self.current_data['hostname'],
+                                 self.current_data['html_content']))
+            self.conn.commit()
+            messagebox.showinfo("Success", "Data saved to database successfully!")
+        except sqlite3.Error as e:
+            messagebox.showerror("Database Error", f"Failed to save data: {str(e)}")
+
+    def view_history(self):
+        """Display a window with the history of scraped data."""
+        try:
+            # Create a new window for history
+            history_window = tk.Toplevel(self.root)
+            history_window.title("Scraping History")
+            history_window.geometry("800x600")
+            
+            # Create a treeview to display the history
+            tree_frame = ttk.Frame(history_window)
+            tree_frame.pack(fill='both', expand=True, padx=10, pady=10)
+            
+            # Add scrollbars
+            tree_scroll_y = ttk.Scrollbar(tree_frame)
+            tree_scroll_y.pack(side='right', fill='y')
+            
+            tree_scroll_x = ttk.Scrollbar(tree_frame, orient='horizontal')
+            tree_scroll_x.pack(side='bottom', fill='x')
+            
+            # Create the treeview
+            columns = ("ID", "URL", "Domain", "IP Address", "Hostname", "Timestamp")
+            tree = ttk.Treeview(
+                tree_frame,
+                columns=columns,
+                show='headings',
+                yscrollcommand=tree_scroll_y.set,
+                xscrollcommand=tree_scroll_x.set
+            )
+            
+            # Configure scrollbars
+            tree_scroll_y.config(command=tree.yview)
+            tree_scroll_x.config(command=tree.xview)
+            
+            # Define columns
+            tree.heading("ID", text="ID")
+            tree.heading("URL", text="URL")
+            tree.heading("Domain", text="Domain")
+            tree.heading("IP Address", text="IP Address")
+            tree.heading("Hostname", text="Hostname")
+            tree.heading("Timestamp", text="Timestamp")
+            
+            # Set column widths
+            tree.column("ID", width=40, anchor='center')
+            tree.column("URL", width=180)
+            tree.column("Domain", width=120)
+            tree.column("IP Address", width=100)
+            tree.column("Hostname", width=120)
+            tree.column("Timestamp", width=140)
+            
+            tree.pack(fill='both', expand=True)
+            
+            # Add a detail view frame
+            detail_frame = ttk.Frame(history_window)
+            detail_frame.pack(fill='both', expand=False, padx=10, pady=5)
+            
+            detail_label = ttk.Label(detail_frame, text="HTML Preview (first 500 chars):")
+            detail_label.pack(anchor='w')
+            
+            detail_text = scrolledtext.ScrolledText(
+                detail_frame,
+                height=10,
+                font=('Consolas', 9),
+                wrap=tk.WORD
+            )
+            detail_text.pack(fill='both', expand=True)
+            
+            # Populate the tree with data
+            self.cursor.execute('''SELECT id, url, domain, ip_address, hostname, timestamp 
+                                FROM scraped_data ORDER BY timestamp DESC''')
+            records = self.cursor.fetchall()
+            
+            for record in records:
+                tree.insert("", 'end', values=record)
+            
+            # Add event to show details when a record is selected
+            def on_tree_select(event):
+                selected_item = tree.focus()
+                if selected_item:
+                    item_data = tree.item(selected_item)
+                    record_id = item_data['values'][0]
+                    
+                    self.cursor.execute("SELECT html_content FROM scraped_data WHERE id=?", (record_id,))
+                    html_content = self.cursor.fetchone()[0]
+                    
+                    detail_text.config(state='normal')
+                    detail_text.delete(1.0, tk.END)
+                    detail_text.insert(tk.END, html_content[:500] + ("..." if len(html_content) > 500 else ""))
+                    detail_text.config(state='disabled')
+            
+            tree.bind('<<TreeviewSelect>>', on_tree_select)
+            
+            # Add a close button
+            close_button = ttk.Button(
+                history_window,
+                text="Close",
+                command=history_window.destroy
+            )
+            close_button.pack(pady=10)
+            
+        except sqlite3.Error as e:
+            messagebox.showerror("Database Error", f"Failed to load history: {str(e)}")
+
+    def clear_history(self):
+        """Clear all records from the database."""
+        if messagebox.askyesno("Confirm", "Are you sure you want to clear all history? This cannot be undone."):
+            try:
+                self.cursor.execute("DELETE FROM scraped_data")
+                self.conn.commit()
+                messagebox.showinfo("Success", "History cleared successfully!")
+            except sqlite3.Error as e:
+                messagebox.showerror("Database Error", f"Failed to clear history: {str(e)}")
+
+    def get_ip_info(self, url):
+        """Extract IP information from the given URL."""
+        try:
+            parsed_url = urlparse(url)
+            domain = parsed_url.netloc
+            if not domain:
+                raise ValueError("Invalid URL format")
+                
+            # Remove port number if present
+            domain = domain.split(':')[0]
+            
+            # Get IP address
+            ip_address = socket.gethostbyname(domain)
+            
+            # Get additional IP information
+            try:
+                host_info = socket.gethostbyaddr(ip_address)
+                hostname = host_info[0]
+                aliases = ', '.join(host_info[1])
+                return {
+                    'domain': domain,
+                    'ip_address': ip_address,
+                    'hostname': hostname,
+                    'aliases': aliases,
+                    'text': f"Domain: {domain}\nIP Address: {ip_address}\nHostname: {hostname}\nAliases: {aliases}"
+                }
+            except socket.herror:
+                return {
+                    'domain': domain,
+                    'ip_address': ip_address,
+                    'hostname': None,
+                    'aliases': None,
+                    'text': f"Domain: {domain}\nIP Address: {ip_address}"
+                }
+                
+        except socket.gaierror:
+            raise Exception("Could not resolve IP address")
+        except ValueError as e:
+            raise Exception(str(e))
+
+    def fetch_data(self):
+        """Fetch data from the specified URL."""
+        url = self.url_entry.get().strip()
+        
+        # Clear previous data
+        self.ip_text.delete(1.0, tk.END)
+        self.html_text.delete(1.0, tk.END)
+        self.current_data = None
+        
+        if not url:
+            messagebox.showerror("Error", "Please enter a URL")
+            return
+            
+        # Add http:// if no protocol specified
+        if not url.startswith(('http://', 'https://')):
+            url = 'http://' + url
+            
+        try:
+            # Get IP information
+            ip_info = self.get_ip_info(url)
+            self.ip_text.insert(tk.END, ip_info['text'])
+            
+            # Fetch HTML content
+            headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
+            response = requests.get(url, headers=headers, timeout=10)
+            response.raise_for_status()
+            
+            html_content = response.text
+            self.html_text.insert(tk.END, html_content)
+            
+            # Store current data for possible save operation
+            self.current_data = {
+                'url': url,
+                'domain': ip_info['domain'],
+                'ip_address': ip_info['ip_address'],
+                'hostname': ip_info['hostname'],
+                'html_content': html_content,
+                'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            }
+            
+        except requests.exceptions.RequestException as e:
+            messagebox.showerror("Error", f"Failed to fetch data: {str(e)}")
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
+
+    def clear_data(self):
+        """Clear the current data from the UI."""
+        self.url_entry.delete(0, tk.END)
+        self.ip_text.delete(1.0, tk.END)
+        self.html_text.delete(1.0, tk.END)
+        self.current_data = None
+
+    def __del__(self):
+        """Close the database connection when the application is closed."""
+        if hasattr(self, 'conn'):
+            self.conn.close()
+
+def main():
+    root = ThemedTk(theme="arc")
+    app = WebScraperGUI(root)
+    root.mainloop()
+
+if __name__ == "__main__":
+    main()
