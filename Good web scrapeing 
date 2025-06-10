@@ -1,0 +1,48 @@
+Commit 8: Robust Scraping Implementation  
+Message:  
+feat: Add comprehensive web scraping with user-agent spoofing and timeout  
+
+Changes:  
+`python
+def fetch_data(self):
+    url = self.url_entry.get().strip()
+    
+    # Clear fields
+    self.clear_data()
+    
+    if not url:
+        messagebox.showerror("Error", "URL cannot be empty")
+        return
+        
+    # Auto-prepend protocol
+    if not url.startswith(('http://', 'https://')):
+        url = 'http://' + url
+        
+    try:
+        # Spoof user agent and set timeout
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
+        response = requests.get(url, headers=headers, timeout=10)
+        response.raiseforstatus()  # Handle HTTP errors
+        
+        # Display results
+        self.iptext.insert(tk.END, self.getip_info(url))
+        self.html_text.insert(tk.END, response.text)
+        
+    except requests.exceptions.RequestException as e:
+        messagebox.showerror("Fetch Error", 
+                           f"Request failed:\n{str(e)}")
+`
+
+Explanation:  
+Added proper User-Agent header to mimic browsers 
+ 
+Implemented 10-second timeout for requests  
+Automatic protocol handling (http:// fallback)  
+
+Comprehensive error handling for:  
+Empty URLs  
+
+Connection timeouts  
+HTTP errors (404, 500, etc.)  
+Invalid URLs  
+Integrated clearing before new fetches  
