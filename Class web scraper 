@@ -1,0 +1,38 @@
+Commit 1: Initial GUI setup  
+Message:  
+feat: Create base GUI structure with URL input, buttons, and display areas  
+
+Explanation:  
+This commit establishes the initial GUI layout, including: 
+ 
+A main window (800x600) with a frame.  
+A labeled URL entry field. 
+ 
+A "Fetch Data" button (logic not yet implemented). 
+ 
+Two ScrolledText widgets for displaying IP and HTML content.  
+
+class WebScraperGUI:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Web Scraper with IP Resolution")
+        self.root.geometry("800x600")
+        
+        self.main_frame = ttk.Frame(self.root, padding="10")
+        self.main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+        
+        # URL Input
+        ttk.Label(self.main_frame, text="Enter URL:").grid(row=0, column=0, sticky=tk.W)
+        self.url_entry = ttk.Entry(self.main_frame, width=60)
+        self.url_entry.grid(row=0, column=1, padx=5, pady=5, sticky=tk.W)
+        
+        # Buttons
+        self.fetch_button = ttk.Button(self.main_frame, text="Fetch Data", command=self.fetch_data)
+        self.fetch_button.grid(row=0, column=2, padx=5, pady=5)
+        
+        # Display Areas
+        self.ip_text = scrolledtext.ScrolledText(self.main_frame, width=70, height=5)
+        self.ip_text.grid(row=2, column=0, columnspan=4, padx=5, pady=5)
+        
+        self.html_text = scrolledtext.ScrolledText(self.main_frame, width=70, height=20)
+        self.html_text.grid(row=4, column=0, columnspan=4, padx=5, pady=5)
