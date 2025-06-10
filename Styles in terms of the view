@@ -1,0 +1,64 @@
+  # Styled Buttons using tk.Button
+        self.fetch_button = tk.Button(self.button_frame,
+                                    text="Fetch Data",
+                                    command=self.fetch_data,
+                                    font=('Helvetica', 10, 'bold'),
+                                    bg='#2ecc71',
+                                    fg='white',
+                                    activebackground='#27ae60',
+                                    activeforeground='white',
+                                    relief='raised',
+                                    padx=20,
+                                    pady=10)
+        self.fetch_button.grid(row=0, column=0, padx=10, pady=5)
+        
+        self.clear_button = tk.Button(self.button_frame,
+                                    text="Clear",
+                                    command=self.clear_data,
+                                    font=('Helvetica', 10, 'bold'),
+                                    bg='#e74c3c',
+                                    fg='white',
+                                    activebackground='#c0392b',
+                                    activeforeground='white',
+                                    relief='raised',
+                                    padx=20,
+                                    pady=10)
+        self.clear_button.grid(row=0, column=1, padx=10, pady=5)
+        
+        # IP Information Frame
+        self.ip_frame = ttk.Frame(self.main_frame, style='Main.TFrame')
+        self.ip_frame.grid(row=2, column=0, columnspan=4, pady=10, sticky='ew')
+        
+        ttk.Label(self.ip_frame,
+                 text="IP Information:",
+                 style='Label.TLabel').grid(row=0, column=0, sticky='w')
+        
+        # Styled IP Text
+        self.ip_text = scrolledtext.ScrolledText(
+            self.ip_frame,
+            width=70,
+            height=5,
+            font=('Consolas', 10),
+            bg='#ffffff',
+            fg='#2c3e50'
+        )
+        self.ip_text.grid(row=1, column=0, pady=5)
+        
+        # HTML Content Frame
+        self.html_frame = ttk.Frame(self.main_frame, style='Main.TFrame')
+        self.html_frame.grid(row=3, column=0, columnspan=4, pady=10, sticky='ew')
+        
+        ttk.Label(self.html_frame,
+                 text="HTML Content:",
+                 style='Label.TLabel').grid(row=0, column=0, sticky='w')
+        
+        # Styled HTML Text
+        self.html_text = scrolledtext.ScrolledText(
+            self.html_frame,
+            width=70,
+            height=20,
+            font=('Consolas', 10),
+            bg='#ffffff',
+            fg='#2c3e50'
+        )
+        self.html_text.grid(row=1, column=0, pady=5)
