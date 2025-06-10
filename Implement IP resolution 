@@ -1,0 +1,35 @@
+Commit 2: Implement IP resolution  
+Message:  
+feat: Add IP resolution using socket and URL parsing  
+
+Explanation:  
+This commit adds:  
+
+A method getipinfo() to resolve a URL’s domain to an IP address using socket.gethostbyname(). 
+ 
+Additional hostname lookup via socket.gethostbyaddr(). 
+ 
+Error handling for invalid URLs or failed DNS resolution.  
+
+
+
+def get_ip_info(self, url):
+    try:
+        parsed_url = urlparse(url)
+        domain = parsed_url.netloc
+        if not domain:
+            raise ValueError("Invalid URL format")
+            
+        domain = domain.split(':')[0]  # Remove port if present
+        ip_address = socket.gethostbyname(domain)
+        
+        try:
+            host_info = socket.gethostbyaddr(ip_address)
+            return f"Domain: {domain}\nIP Address: {ip_address}\nHostname: {host_info[0]}"
+        except socket.herror:
+            return f"Domain: {domain}\nIP Address: {ip_address}"
+            
+    except socket.gaierror:
+        raise Exception("Could not resolve IP address")
+    except ValueError as e:
+        raise Exception(str(e))
