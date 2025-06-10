@@ -1,0 +1,32 @@
+Commit 7: Enhanced IP Resolution  
+Message:  
+feat: Improve IP resolution with detailed host information and error handling  
+
+Changes:  
+`python
+def getipinfo(self, url):
+    try:
+        parsed_url = urlparse(url)
+        domain = parsed_url.netloc.split(':')[0]  # Handle ports
+        
+        ip_address = socket.gethostbyname(domain)
+        
+        try:
+            hostinfo = socket.gethostbyaddr(ipaddress)
+            return f"Domain: {domain}\nIP Address: {ipaddress}\nHostname: {hostinfo[0]}\nAliases: {', '.join(host_info[1])}"
+        except socket.herror:
+            return f"Domain: {domain}\nIP Address: {ip_address}"
+            
+    except socket.gaierror:
+        raise Exception("DNS resolution failed")
+    except ValueError as e:
+        raise Exception(f"Invalid URL: {str(e)}")
+`
+
+Explanation:  
+Added detailed host information (aliases) to IP resolution  
+
+Improved error messages for DNS failures  
+Better URL parsing that handles port numbers  
+
+More informative return format with labeled sections
