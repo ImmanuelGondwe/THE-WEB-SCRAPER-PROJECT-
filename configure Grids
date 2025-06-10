@@ -1,0 +1,73 @@
+ # Configure grid weights
+        self.root.grid_rowconfigure(1, weight=1)
+        self.root.grid_columnconfigure(0, weight=1)
+
+    def get_ip_info(self, url):
+        try:
+            parsed_url = urlparse(url)
+            domain = parsed_url.netloc
+            if not domain:
+                raise ValueError("Invalid URL format")
+                
+            # Remove port number if present
+            domain = domain.split(':')[0]
+            
+            # Get IP address
+            ip_address = socket.gethostbyname(domain)
+            
+            # Get additional IP information
+            try:
+                host_info = socket.gethostbyaddr(ip_address)
+                return f"Domain: {domain}\nIP Address: {ip_address}\nHostname: {host_info[0]}\nAliases: {', '.join(host_info[1])}"
+            except socket.herror:
+                return f"Domain: {domain}\nIP Address: {ip_address}"
+                
+        except socket.gaierror:
+            raise Exception("Could not resolve IP address")
+        except ValueError as e:
+            raise Exception(str(e))
+
+    def fetch_data(self):
+        url = self.url_entry.get().strip()
+        
+        # Clear previous data
+        self.ip_text.delete(1.0, tk.END)
+        self.html_text.delete(1.0, tk.END)
+        
+        if not url:
+            messagebox.showerror("Error", "Please enter a URL")
+            return
+            
+        # Add http:// if no protocol specified
+        if not url.startswith(('http://', 'https://')):
+            url = 'http://' + url
+            
+        try:
+            # Get IP information
+            ip_info = self.get_ip_info(url)
+            self.ip_text.insert(tk.END, ip_info)
+            
+            # Fetch HTML content
+            headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
+            response = requests.get(url, headers=headers, timeout=10)
+            response.raise_for_status()
+            
+            self.html_text.insert(tk.END, response.text)
+            
+        except requests.exceptions.RequestException as e:
+            messagebox.showerror("Error", f"Failed to fetch data: {str(e)}")
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
+
+    def clear_data(self):
+        self.url_entry.delete(0, tk.END)
+        self.ip_text.delete(1.0, tk.END)
+        self.html_text.delete(1.0, tk.END)
+
+def main():
+    root = ThemedTk(theme="arc")
+    app = WebScraperGUI(root)
+    root.mainloop()
+
+if __name__ == "__main__":
+    main()
