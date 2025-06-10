@@ -1,0 +1,49 @@
+Commit 3: Add web scraping with error handling  
+Message:  
+feat: Implement HTML fetching and error handling with requests  
+
+Changes:  
+`python
+def fetch_data(self):
+    url = self.url_entry.get().strip()
+    
+    # Clear previous data
+    self.ip_text.delete(1.0, tk.END)
+    self.html_text.delete(1.0, tk.END)
+    
+    if not url:
+        messagebox.showerror("Error", "Please enter a URL")
+        return
+        
+    if not url.startswith(('http://', 'https://')):
+        url = 'http://' + url
+        
+    try:
+        # Show IP info (using existing getipinfo())
+        ipinfo = self.getip_info(url)
+        self.iptext.insert(tk.END, ipinfo)
+        
+        # Fetch HTML
+        headers = {'User-Agent': 'Mozilla/5.0'}
+        response = requests.get(url, headers=headers, timeout=10)
+        response.raiseforstatus()
+        self.html_text.insert(tk.END, response.text)
+        
+    except requests.exceptions.RequestException as e:
+        messagebox.showerror("Error", f"Failed to fetch data: {str(e)}")
+    except Exception as e:
+        messagebox.showerror("Error", str(e))
+`
+
+Explanation:  
+This commit introduces:  
+A fetch_data() method to retrieve HTML content using requests.get(). 
+ 
+Auto-prepending http:// if missing.  
+Timeout (timeout=10) and user-agent headers to mimic browsers. 
+ 
+Comprehensive error handling with messagebox feedback for:  
+Invalid URLs.  
+
+Connection/timeout errors.  
+HTTP errors (via raiseforstatus()).  
